@@ -1,0 +1,30 @@
+.player{
+    width: max-content;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: absolute;
+    z-index: 1;
+}
+.enemy{
+    width: max-content;
+    align-items: center;
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: center;
+    position: absolute;
+    margin: 0!important;
+}
+.cannon{
+    height: 40%;
+    width: 40%;
+}
+
+.base{
+    height: 40%;
+    width: 100%;
+}
+.enemyClaw{
+    width: 30%;
+}

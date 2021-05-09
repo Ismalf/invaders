@@ -1,0 +1,19 @@
+.board {
+    background-color: black;
+    cursor: none;
+    overflow: hidden;
+    position: relative;
+}
+.GameStatus{
+    width: 100%;
+    top: 0;
+    left: 0;
+    height: 30px;
+    position: absolute;
+    backdrop-filter: blur(18px);
+    color: white;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    font-family: 'Courier New', Courier, monospace;
+}

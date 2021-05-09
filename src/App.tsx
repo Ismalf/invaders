@@ -1,24 +1,17 @@
 import React from 'react';
-import logo from './logo.svg';
+import GameBoard from './components/game_board/game_board';
 import './App.css';
-
+// comandos para red hospedada
+// netsh wlan set hostednetwork mode=allow ssid=testsi key=12345678
+// netsh wlan start hostednetwork
 function App() {
+  const height = window.innerHeight;
+  const width = window.innerWidth < 420 ? window.innerWidth : 420;
+  const frameRate = 60;
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="gamescreen">
+      
+      <GameBoard frameRate={frameRate} playgroundHeight={height} playgroundWidth={width} shotTimeOut={500} />
     </div>
   );
 }
