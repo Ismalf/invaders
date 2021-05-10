@@ -4,6 +4,7 @@
     overflow: hidden;
     position: relative;
 }
+
 .GameStatus{
     width: 100%;
     top: 0;
@@ -12,8 +13,11 @@
     position: absolute;
     backdrop-filter: blur(18px);
     color: white;
-    display: flex;
-    justify-content: space-around;
+    display: grid;
+    grid-template-columns: 33% 33% 33%;
+    justify-content: center;
     align-items: center;
     font-family: 'Courier New', Courier, monospace;
+    column-gap: 5px;
+    text-align: center;
 }

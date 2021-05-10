@@ -7,7 +7,9 @@ interface GameState {
     enemyLimit: number,
     score: number,
     maxScore: number,
-    playerLives: number
+    playerLives: number,
+    hasLost: boolean,
+    loopId: any
 }
 
 interface GameProps {
@@ -20,12 +22,32 @@ interface GameProps {
 
 class GameBoard extends React.Component<GameProps, GameState>{
 
+    /**
+     * Array of generators to populate screen with different patterns of enemies
+     */
     enemyGen: Array<Generator> = [];
+    /**
+     * Activated when right arrow is pressed or device is tilted to the east
+     */
     isMovinRight: boolean = false;
+    /**
+     * Activated when left arrow is pressed or device is tilted to the west
+     */
     isMovinLeft: boolean = false;
+    /**
+     * Activated when up arrow is pressed or a touch is detected on device screen
+     */
     isShooting: boolean = false;
+    /**
+     * Index of the current enemy generator working
+     */
     generatorRunning: number = 0;
+    /**
+     * Populated with the enemy ships that had shot, to prevent multi shots from the same enemy
+     * while keeping the number of bullets to a certain limit
+     */
     enemiesShot: number[] = [];
+
     readonly BULLET_SPEED: number = 5;
     readonly BULLET_DMG: number = 25;
     readonly ENEMY_SPEED: number = 2;
@@ -34,11 +56,29 @@ class GameBoard extends React.Component<GameProps, GameState>{
     readonly LIMIT_OF_ENEMY_SHIPS_ON_SCREEN: number = 100;
     readonly PLAYER_SIZE = 32;
 
+    /**
+     * Object representing the player on the screen
+     */
     player: Ship = new Ship();
+    /**
+     * Array of bullets on the screen, filled when player or enemy fires
+     */
     bullets: Bullet[] = [];
+    /**
+     * List of enemies created by the enemy generator array
+     */
     enemies: Ship[] = [];
+    /**
+     * Reference to the canvas in which the game is drawn
+     */
     btfld: HTMLCanvasElement;
+    /**
+     * Context to create 2d graphics
+     */
     ctx: CanvasRenderingContext2D;
+    /**
+     * Timeout to prevent the player from spaming bullets
+     */
     nextShotIn: number;
 
 
@@ -50,7 +90,9 @@ class GameBoard extends React.Component<GameProps, GameState>{
             enemyLimit: this.LIMIT_OF_ENEMY_SHIPS_ON_SCREEN,
             maxScore: 0,
             score: 0,
-            playerLives: 3
+            playerLives: 3,
+            hasLost: false,
+            loopId: 0
         }
 
         this.btfld = document.getElementById('battleField') as HTMLCanvasElement
@@ -75,6 +117,10 @@ class GameBoard extends React.Component<GameProps, GameState>{
         this.initGame()
     }
 
+    /**
+     * Locates the player at an initial position within the canvas,
+     * also prepares the enemy generators
+     */
     initalizeVars() {
         const initialXPos = this.props.playgroundWidth / 2 - this.PLAYER_SIZE / 2; // minus half the ship width
         const initialYPos = this.props.playgroundHeight - this.PLAYER_SIZE; // minus the ship height
@@ -86,11 +132,12 @@ class GameBoard extends React.Component<GameProps, GameState>{
         this.isMovinRight = false
         this.isShooting = false
         this.enemyGen.push(this.buildShip(this.PLAYER_SIZE, 4, 'r', 35), this.buildShip(this.PLAYER_SIZE, 4, 'l', this.PLAYER_SIZE + this.VERTICAL_OFFSET + 35))
-
-
-
     }
 
+    /**
+     * Called when the player presses a key (COMPUTER ONLY)
+     * @param ev KeyboardEvent
+     */
     handleKeyDown(ev: KeyboardEvent) {
         switch (ev.key) {
             case 'ArrowRight':
@@ -107,6 +154,10 @@ class GameBoard extends React.Component<GameProps, GameState>{
         }
     }
 
+    /**
+     * Called when the player stops pressing a key (COMPUTER ONLY)
+     * @param ev 
+     */
     handleKeyUp(ev: KeyboardEvent) {
         switch (ev.key) {
             case 'ArrowRight':
@@ -122,6 +173,11 @@ class GameBoard extends React.Component<GameProps, GameState>{
 
     }
 
+    /**
+     * Keeps track of the device acceleration on the x axis to move the ship left or right
+     * @param ev 
+     * @returns void, prevents of running unnecessary code if no accelerometer x value is found
+     */
     handleAccelerometer(ev: DeviceMotionEvent) {
         const el = document.getElementById('debug')
         if (el) {
@@ -138,17 +194,24 @@ class GameBoard extends React.Component<GameProps, GameState>{
         }
     }
 
-    handleTapUp(ev: TouchEvent) {
-        this.isShooting = false
-    }
-    
-    handleTapDown(ev: TouchEvent) {
-        this.isShooting = true
-    }
+    /**
+     * When the player stops tapping on the screen, the player ship stops shooting
+     * @param ev 
+     */
+    handleTapUp(ev: TouchEvent) { this.isShooting = false }
 
+    /**
+     * When the player starts tapping on the screen, the player ship starts shooting
+     * @param ev 
+     */
+    handleTapDown(ev: TouchEvent) { this.isShooting = true }
+
+    /**
+     * Starts the game loop, performing drawing and collision detection calculations
+     */
     initGame() {
 
-        setInterval(() => {
+        const loopId = setInterval(() => {
             this.clean()
             const { posX, posY, size } = this.player
             this.isShooting && this.bullets.push(...this.generateBullets(posX + size / 2, posY - size))
@@ -158,8 +221,12 @@ class GameBoard extends React.Component<GameProps, GameState>{
             this.bullets = bullets
             this.enemies = enemies
         }, 1000 / this.props.frameRate);
+        this.setState({ loopId }) // So it can stop
     }
 
+    /**
+     * Cleans the canvas so a new frame can be rendered
+     */
     clean() {
         this.ctx.clearRect(0, 0, this.props.playgroundWidth, this.props.playgroundHeight);
         this.ctx.beginPath()
@@ -169,6 +236,11 @@ class GameBoard extends React.Component<GameProps, GameState>{
         this.ctx.closePath()
     }
 
+    /**
+     * Draws a new frame
+     * @param bullets bullets on screen
+     * @param enemies enemies on screen
+     */
     draw(bullets: Bullet[], enemies: Ship[]) {
         this.player.drawShip(this.ctx)
         for (let e of enemies) {
@@ -228,6 +300,12 @@ class GameBoard extends React.Component<GameProps, GameState>{
         return { bullets, enemies }
     }
 
+    /**
+     * Decides whether an enemy is able or not to shoot at the player
+     * @param i 
+     * @param enemies 
+     * @returns 
+     */
     isAbleToShoot(i: number, enemies: Ship[]) {
         if (i >= enemies.length) return false
         const enemy = enemies[i]
@@ -235,7 +313,24 @@ class GameBoard extends React.Component<GameProps, GameState>{
         return !intrr && this.collX(enemy.posX, enemy.posX + enemy.size, this.player.posX, this.player.posX + this.player.size)
     }
 
+    /**
+     * Checks collission on the Y axis between a target and a "moving" element
+     * @param y11 target element original Y coordinate
+     * @param y12 target element original Y coordinate plus the element's size (height)
+     * @param y21 moving element original Y coordinate
+     * @param y22 moving element original Y coordinate plus the element's size (height)
+     * @returns 
+     */
     collY = (y11: number, y12: number, y21: number, y22: number) => (y21 >= y11 && y21 <= y12) || (y22 >= y11 && y22 <= y12)
+    
+    /**
+     * Checks collission on the X axis between a target and a "moving" element
+     * @param x11 target element original X coordinate
+     * @param x12 target element original X coordinate plus the element's size (width)
+     * @param x21 moving element original X coordinate
+     * @param x22 moving element original X coordinate plus the element's size (width)
+     * @returns 
+     */
     collX = (x11: number, x12: number, x21: number, x22: number) => (x21 >= x11 && x21 <= x12) || (x22 >= x11 && x22 <= x12)
 
     checkBulletCollision(bs: Array<Bullet>, es: Array<Ship>, player: Ship) {
@@ -260,7 +355,10 @@ class GameBoard extends React.Component<GameProps, GameState>{
                 }
             } else { // bullets agains player
                 if (this.collX(player.posX, player.posX + player.size, b.posX, b.posX + b.size) && this.collY(player.posY, player.posY + player.size, b.posY, b.posY + b.size)) {
-                    this.setState({ playerLives: this.state.playerLives - 1 })
+                    let playerLives = this.state.playerLives
+                    let hasLost = !--playerLives ? true : false
+                    hasLost && clearInterval(this.state.loopId)
+                    this.setState({ playerLives, hasLost })
                     b.dmg = 0
                 }
             }
@@ -268,6 +366,15 @@ class GameBoard extends React.Component<GameProps, GameState>{
         return { bullets, enemies: this.cleanEnemies(enemies) }
     }
 
+    /**
+     * Returns a new bullet to be drawn on the screen, if hte bullet is shot by the player
+     * a time limitation is set to prevent bullet spaming
+     * @param fatherx Where to draw the bullet on the x axis
+     * @param fathery Where to draw the bullet on the y axis
+     * @param dir Indicates the direction that the bullets travels (up or down)
+     * @param isEnemy Indicates if the bullet is fired by an enemy
+     * @returns 
+     */
     generateBullets(fatherx: number, fathery: number, dir?: string, isEnemy?: boolean) {
         if (this.nextShotIn !== 0 && !isEnemy) return [];
         const size = 10
@@ -276,15 +383,29 @@ class GameBoard extends React.Component<GameProps, GameState>{
         return [new Bullet('#ff0000', dir ?? 'up', this.BULLET_SPEED, fatherx - size / 2, fathery, size, this.BULLET_DMG)]
     }
 
+    /**
+     * Clears all the bullets that are either outside of the screen or have damaged a ship
+     * @param bullets 
+     * @returns 
+     */
     cleanBullets(bullets: Array<Bullet>) {
         // Erase bullets out of screen
         return bullets.filter(b => b.posY <= this.props.playgroundHeight && b.posY + b.size >= 0 && b.dmg > 0)
     }
 
+    /**
+     * Clears all enemy ships that are either out of the screen or have 0 health points
+     * @param enemies 
+     * @returns 
+     */
     cleanEnemies(enemies: Array<Ship>) {
         return enemies.filter(e => e.posY + e.size <= this.props.playgroundHeight && e.health > 0)
     }
 
+    /**
+     * Uses one of the generators set to build enemies and returns a new enemy ship to be drawn
+     * @returns 
+     */
     generateEnemies() {
         const enemies = this.enemies.slice() // Enemy array copy
         const last_gen_enemy = enemies[enemies.length - 1]
@@ -301,6 +422,13 @@ class GameBoard extends React.Component<GameProps, GameState>{
         return enemies
     }
 
+    /**
+     * Generator that builds a series of enemy ships
+     * @param size the size (WxH) of the sprites to generate
+     * @param limit the amount of enemies to generate
+     * @param dir the direction that the enemies will move
+     * @param posY the y axis where the enemies will start moving
+     */
     * buildShip(size: number, limit: number, dir: string, posY: number): Generator<Ship> {
         for (let i = 0; i < limit; i++) {
             let enemy: Ship = new Ship(
@@ -327,7 +455,7 @@ class GameBoard extends React.Component<GameProps, GameState>{
                     <div>Wave: {this.state.wave}</div>
                     <div>Score: {this.state.score}</div>
                 </div>
-                <div id="debug" style={{ color: 'red', position: 'absolute', top: 0, left: 0, zIndex: 2 }}></div>
+                {/* <div id="debug" style={{ color: 'red', position: 'absolute', top: 0, left: 0, zIndex: 2 }}></div> */}
             </div>
         )
     }

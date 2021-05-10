@@ -4,6 +4,7 @@ import './App.css';
 // comandos para red hospedada
 // netsh wlan set hostednetwork mode=allow ssid=testsi key=12345678
 // netsh wlan start hostednetwork
+// ($env:HTTPS = "true") -and (npm start)
 function App() {
   const height = window.innerHeight;
   const width = window.innerWidth < 420 ? window.innerWidth : 420;
