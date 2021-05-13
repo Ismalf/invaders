@@ -1,4 +1,6 @@
+
 export class Ship {
+    
     constructor(
         public color: any | undefined = '',
         public posX: number = 0,
@@ -9,7 +11,9 @@ export class Ship {
         public speed: number = 0,
         public points: number = 0,
         public dir?: string,
-    ) { }
+    ) {
+
+    }
 
     drawShip(ctx: CanvasRenderingContext2D) {
         switch (this.type) {
