@@ -2,11 +2,15 @@ import React from 'react';
 import './game_board.css';
 import { Ship } from '../ship/ship';
 import { Bullet } from '../bullet/bullet'
+import { GL } from '../../utils/logic/game_logic'
+import { CM } from '../../utils/logic/canvas_management'
+import { Shield } from '../shield/shield';
 interface GameState {
     wave: number,
     enemyLimit: number,
     score: number,
     maxScore: number,
+    hit: boolean,
     playerLives: number,
     hasLost: boolean,
     loopId: any
@@ -93,6 +97,8 @@ class GameBoard extends React.Component<GameProps, GameState>{
      */
     nextSpeedBoostIn: number;
 
+    shields: Shield[] = [];
+
 
     constructor(props: GameProps) {
         super(props);
@@ -100,6 +106,7 @@ class GameBoard extends React.Component<GameProps, GameState>{
         this.nextEnemyShotIn = 0
         this.nextSpeedBoostIn = this.ENEMY_SPEED_BOOST_INTERVAL
         this.state = {
+            hit: false,
             wave: 1,
             enemyLimit: this.LIMIT_OF_ENEMY_SHIPS_ON_SCREEN,
             maxScore: 0,
@@ -142,12 +149,21 @@ class GameBoard extends React.Component<GameProps, GameState>{
         this.bullets = Array(0);
         this.enemies = Array(0);
         this.enemyGen = Array(0);
+        this.shields = Array(0);
         this.generatorRunning = 0;
-
-        this.isMovinLeft = false
-        this.isMovinRight = false
-        this.isShooting = false
-        this.enemyGen.push(this.buildShip(this.PLAYER_SIZE, 4 * (Math.floor(this.props.playgroundWidth / (this.PLAYER_SIZE + 10)) - 1), 'r', 35))
+        const maxShieldWidth = Math.floor(this.props.playgroundWidth / 6);
+        const numberOfShields = 3;
+        const spacing = Math.floor((this.props.playgroundWidth - numberOfShields * (maxShieldWidth)) / numberOfShields / 2);
+        let posx = 0;
+        for (let i = 0; i < numberOfShields; i++) {
+            posx += spacing;
+            this.shields.push(new Shield(9, posx, Math.floor(this.props.playgroundHeight / 2) + maxShieldWidth + this.player.size, maxShieldWidth, maxShieldWidth))
+            posx += spacing + maxShieldWidth;
+        }
+        this.isMovinLeft = false;
+        this.isMovinRight = false;
+        this.isShooting = false;
+        this.enemyGen.push(this.buildShip(this.PLAYER_SIZE, 4 * (Math.floor(this.props.playgroundWidth / (this.PLAYER_SIZE + 10)) - 1), 'r', 35));
     }
 
     /**
@@ -228,7 +244,7 @@ class GameBoard extends React.Component<GameProps, GameState>{
     initGame() {
         const ex = () => {
             const loopId = setInterval(() => {
-                this.clean()
+                CM.clean(this.ctx, this.props.playgroundWidth, this.props.playgroundHeight)
                 if (this.nextSpeedBoostIn === 0) {
                     this.enemies.forEach(s => s.speed += 0.05)
                     this.nextSpeedBoostIn = this.ENEMY_SPEED_BOOST_INTERVAL
@@ -239,7 +255,7 @@ class GameBoard extends React.Component<GameProps, GameState>{
                 // const e = this.enemies.length < this.state.enemyLimit ? this.generateEnemies() : this.enemies
                 const e = this.enemies
                 const { bullets, enemies } = this.moveEls(e);
-                this.draw(bullets, enemies);
+                CM.draw(bullets, [...enemies, this.player], this.ctx, this.shields);
                 this.bullets = bullets
                 this.enemies = enemies
             }, 1000 / this.props.frameRate);
@@ -248,9 +264,9 @@ class GameBoard extends React.Component<GameProps, GameState>{
         const prep = () => setTimeout(() => {
             const n = this.enemyGen[0].next()
             if (!n.done) {
-                this.clean()
+                CM.clean(this.ctx, this.props.playgroundWidth, this.props.playgroundHeight)
                 this.enemies.push(n.value as Ship)
-                this.draw(this.bullets, this.enemies)
+                CM.draw(this.bullets, [...this.enemies, this.player], this.ctx, this.shields)
                 prep()
             } else {
                 setTimeout(() => this.nextSpeedBoostIn = 0, this.ENEMY_SPEED_BOOST_INTERVAL)
@@ -262,40 +278,13 @@ class GameBoard extends React.Component<GameProps, GameState>{
 
     }
 
-    /**
-     * Cleans the canvas so a new frame can be rendered
-     */
-    clean() {
-        this.ctx.clearRect(0, 0, this.props.playgroundWidth, this.props.playgroundHeight);
-        this.ctx.beginPath()
-        this.ctx.rect(0, 0, this.props.playgroundWidth, this.props.playgroundHeight)
-        this.ctx.fillStyle = '#000';
-        this.ctx.fill()
-        this.ctx.closePath()
-    }
-
-    /**
-     * Draws a new frame
-     * @param bullets bullets on screen
-     * @param enemies enemies on screen
-     */
-    draw(bullets: Bullet[], enemies: Ship[]) {
-        this.player.drawShip(this.ctx)
-        for (let e of enemies) {
-            e?.drawShip(this.ctx)
-        }
-        for (let b of bullets) {
-            b?.draw(this.ctx)
-        }
-    }
-
     moveEls(e: Array<Ship>) {
         const bullets = this.bullets.slice()
         const enemies = this.enemies.slice()
-        // = this.checkBulletCollision(this.bullets, e, this.player)
         if (!enemies.length) {
             clearInterval(this.state.loopId)
-            this.clean()
+            CM.clean(this.ctx, this.props.playgroundWidth, this.props.playgroundHeight)
+            this.setState({ wave: this.state.wave + 1 })
             this.initalizeVars()
             this.initGame()
             return { bullets: [], enemies: [] }
@@ -311,125 +300,92 @@ class GameBoard extends React.Component<GameProps, GameState>{
         this.player.posX = nextPos
         const enemiesBulletCount = bullets.filter(b => b.dir === 'down').length
         enemiesBulletCount === 0 && this.enemiesShot.splice(0)
-
-
-        //#region Individual movement Example
-        /* enemies.forEach((e, i) => {
-            if (e.dir === 'r') {
-                if (e.posX + e.size >= this.props.playgroundWidth) { // at the right end of screen
-                    e.posY += e.size + this.VERTICAL_OFFSET // 10 pixel offset 
-                    e.dir = 'l'
-                } else {
-                    e.posX += e.speed // move 1 unit
-                }
-            } else {
-                if (e.posX <= 0) { // at the left end of screen
-                    e.posY += e.size + this.VERTICAL_OFFSET // 10 pixel offset 
-                    e.dir = 'r'
-                } else {
-                    e.posX -= e.speed // move 1 unit
-                }
-            }
-            if (enemiesBulletCount < 5
-                && this.isAbleToShoot(i, enemies)
-                && !this.enemiesShot.includes(i)) {
-                bullets.push(...this.generateBullets(e.posX + e.size / 2, e.posY + e.size, 'down', true))
-                this.enemiesShot.push(i)
-            }
-        }) */
-        //#endregion
-
         //#region swarm movement
         const moveDown = enemies.every(s => s.dir === 'r') ? enemies.some(s => s.posX + s.size >= this.props.playgroundWidth) : enemies.some(s => s.posX <= 0)
         if (moveDown) {
-            enemies.forEach(s => { s.posY += s.size + this.VERTICAL_OFFSET; s.dir = s.dir === 'r' ? 'l' : 'r' })
+            const canMoveDown = enemies.every(e => this.shields.every(s => s._shieldLayout.every(r => r.every(c => e.posY + e.size < c.y0 - e.size))))
+            if (canMoveDown) {
+                enemies.forEach(s => { s.posY += 5 + this.VERTICAL_OFFSET; s.dir = s.dir === 'r' ? 'l' : 'r' });
+            } else {
+                enemies.forEach((ship, i) => {
+                    if (this.nextEnemyShotIn === 0 && GL.shootShields(i, enemies, this.shields) && !this.enemiesShot.includes(i)) {
+                        bullets.push(...this.generateBullets(ship.posX + ship.size / 2, ship.posY + ship.size, 'down', true));
+                        this.enemiesShot.push(i);
+                        this.nextEnemyShotIn = this.ENEMY_SHOT_INTERVAL;
+                        setTimeout(() => this.nextEnemyShotIn = 0, this.ENEMY_SHOT_INTERVAL);
+                    }
+                    ship.dir = ship.dir === 'r' ? 'l' : 'r';
+                })
+            }
         } else {
-            enemies.forEach(s => s.posX += s.dir === 'r' ? s.speed : -s.speed)
+            enemies.forEach(s => s.posX += s.dir === 'r' ? s.speed : -s.speed);
         }
-        const ship = enemies.find((s, i) => this.isAbleToShoot(i, enemies) && !this.enemiesShot.includes(i))
-        const shipI = enemies.findIndex((s, i) => this.isAbleToShoot(i, enemies) && !this.enemiesShot.includes(i))
-        if (ship && shipI >= 0 && this.nextEnemyShotIn === 0) {
-            bullets.push(...this.generateBullets(ship.posX + ship.size / 2, ship.posY + ship.size, 'down', true))
-            this.enemiesShot.push(shipI)
-            this.nextEnemyShotIn = this.ENEMY_SHOT_INTERVAL
-            setTimeout(() => this.nextEnemyShotIn = 0, this.ENEMY_SHOT_INTERVAL)
+        const shipI = enemies.findIndex((s, i) => GL.isAbleToShoot(i, enemies, this.player) && !this.enemiesShot.includes(i));
+        if (shipI >= 0 && this.nextEnemyShotIn === 0) {
+            const ship = enemies[shipI];
+            bullets.push(...this.generateBullets(ship.posX + ship.size / 2, ship.posY + ship.size, 'down', true));
+            this.enemiesShot.push(shipI);
+            this.nextEnemyShotIn = this.ENEMY_SHOT_INTERVAL;
+            setTimeout(() => this.nextEnemyShotIn = 0, this.ENEMY_SHOT_INTERVAL);
         }
         //#endregion
 
         // Move bullets - before moving bullet check if it collides and move the corresponding space to avoid
         // detecting collisions after they happened
         bullets.forEach(b => {
-            const maxTravel = this.checkBulletCollision(b, enemies, this.player)
+            const maxTravel = this.checkBulletCollision(b, enemies, this.player, this.shields);
             if (b.dir === 'up') {
-                b.posY -= maxTravel ?? b.vel
+                b.posY -= maxTravel ?? b.vel;
             } else if (b.dir === 'down') {
-                b.posY += maxTravel ?? b.vel
+                b.posY += maxTravel ?? b.vel;
             }
         })
-        return { bullets: this.cleanBullets(bullets), enemies: this.cleanEnemies(enemies) }
+        let cenemiesRes = GL.cleanEnemies(enemies, this.props.playgroundHeight);
+        if (cenemiesRes.count) this.setState({ playerLives: this.state.playerLives - 1 });
+        return { bullets: GL.cleanBullets(bullets, this.props.playgroundHeight), enemies: cenemiesRes.enemies };
     }
 
-    /**
-     * Decides whether an enemy is able or not to shoot at the player
-     * @param i 
-     * @param enemies 
-     * @returns 
-     */
-    isAbleToShoot(i: number, enemies: Ship[]) {
-        if (i >= enemies.length) return false
-        const enemy = enemies[i]
-        const intrr = enemies.filter((v, index) => index !== i).find(e => this.collX(enemy.posX, enemy.posX + enemy.size, e.posX, e.posX + e.size) && enemy.posY < e.posY + e.size)
-        return !intrr && this.collX(enemy.posX, enemy.posX + enemy.size, this.player.posX - this.player.speed, this.player.posX + this.player.size + this.player.speed)
-    }
-
-    /**
-     * Checks collission on the Y axis between a target and a "moving" element
-     * @param y11 target element original Y coordinate
-     * @param y12 target element original Y coordinate plus the element's size (height)
-     * @param y21 moving element original Y coordinate
-     * @param y22 moving element original Y coordinate plus the element's size (height)
-     * @returns 
-     */
-    collY = (y11: number, y12: number, y21: number, y22: number) => (y21 >= y11 && y21 <= y12) || (y22 >= y11 && y22 <= y12)
-
-    /**
-     * Checks collission on the X axis between a target and a "moving" element
-     * @param x11 target element original X coordinate
-     * @param x12 target element original X coordinate plus the element's size (width)
-     * @param x21 moving element original X coordinate
-     * @param x22 moving element original X coordinate plus the element's size (width)
-     * @returns 
-     */
-    collX = (x11: number, x12: number, x21: number, x22: number) => (x21 >= x11 && x21 <= x12) || (x22 >= x11 && x22 <= x12)
-
-    checkBulletCollision(b: Bullet, enemies: Array<Ship>, player: Ship) {
-        if (b.dir === 'up') { // bullets against enemies                
-            const index = enemies.findIndex(e => this.collX(e.posX, e.posX + e.size, b.posX, b.posX + b.size)
-                && this.collY(e.posY, e.posY + e.size, b.posY + b.vel, b.posY + b.size + b.vel,)) // check Y collision with the speed
-            if (index >= 0) {
-                const enemy = Object.assign({}, enemies[index]) as Ship
-                enemy.health -= b.dmg
-                if (enemy.health <= enemies[index].health / 2) {
-                    enemy.color = '#ff3333'
-                }
-                if (enemy.health <= 0) {
-                    this.setState({ score: this.state.score + (enemy.points ?? 0) })
-                }
-                enemies[index] = new Ship(enemy.color, enemy.posX, enemy.posY, enemy.size, enemy.type, enemy.health, enemy.speed, enemy.points, enemy.dir)
-                b.dmg = 0
+    checkBulletCollision(b: Bullet, enemies: Array<Ship>, player: Ship, shields: Shield[]) {
+        for (let s of shields) {
+            const block = s.checkCollision(b);
+            if (block) {
+                b.dmg = 0;
                 // calculate distance that can be travelled before hitting the target
-                return b.posY - enemy.posY + enemy.size
-            }
-        } else { // bullets agains player
-            if (this.collX(player.posX, player.posX + player.size, b.posX, b.posX + b.size) && this.collY(player.posY, player.posY + player.size, b.posY, b.posY + b.size)) {
-                let playerLives = this.state.playerLives
-                let hasLost = !--playerLives ? true : false
-                hasLost && clearInterval(this.state.loopId)
-                this.setState({ playerLives, hasLost })
-                b.dmg = 0
+                const d = b.posY - block.y1;
+                return d >= 0 ? d : 0;
             }
         }
-        return null
+        if (b.dir === 'up') { // bullets against enemies                
+            const index = enemies.findIndex(e => GL.collX(e.posX, e.posX + e.size, b.posX, b.posX + b.size)
+                && GL.collY(e.posY, e.posY + e.size, b.posY + b.vel, b.posY + b.size + b.vel,));// check Y collision with the speed
+            if (index >= 0) {
+                const enemy = Object.assign({}, enemies[index]) as Ship;
+                enemy.health -= b.dmg;
+                if (enemy.health <= enemies[index].health / 2) {
+                    enemy.color = '#ff3333';
+                }
+                if (enemy.health <= 0) {
+                    this.setState({ score: this.state.score + (enemy.points ?? 0) });
+                }
+                enemies[index] = new Ship(enemy.color, enemy.posX, enemy.posY, enemy.size, enemy.type, enemy.health, enemy.speed, enemy.points, enemy.dir);
+                b.dmg = 0;
+                // calculate distance that can be travelled before hitting the target
+                const d = b.posY - enemy.posY + enemy.size;
+                return d >= 0 ? d : 0;
+            }
+        } else { // bullets agains player
+            if (GL.collX(player.posX, player.posX + player.size, b.posX, b.posX + b.size) && GL.collY(player.posY, player.posY + player.size, b.posY, b.posY + b.size)) {
+                let playerLives = this.state.playerLives;
+                let hasLost = !--playerLives ? true : false;
+                setTimeout(() => this.setState({ hit: false }), 200)
+                hasLost && clearInterval(this.state.loopId);
+                this.setState({ playerLives, hasLost, hit: true });
+                b.dmg = 0;
+                const d = player.posY - b.posY;
+                return d >= 0 ? d : 0;
+            }
+        }
+        return null;
     }
 
     /**
@@ -447,25 +403,6 @@ class GameBoard extends React.Component<GameProps, GameState>{
         !isEnemy && setTimeout(() => this.nextShotIn = 0, this.props.shotTimeOut);
         !isEnemy && (this.nextShotIn = this.props.shotTimeOut)
         return [new Bullet('#ff0000', dir ?? 'up', this.BULLET_SPEED, fatherx - size / 2, fathery, size, this.BULLET_DMG)]
-    }
-
-    /**
-     * Clears all the bullets that are either outside of the screen or have damaged a ship
-     * @param bullets 
-     * @returns 
-     */
-    cleanBullets(bullets: Array<Bullet>) {
-        // Erase bullets out of screen
-        return bullets.filter(b => b.posY <= this.props.playgroundHeight && b.posY + b.size >= 0 && b.dmg > 0)
-    }
-
-    /**
-     * Clears all enemy ships that are either out of the screen or have 0 health points
-     * @param enemies 
-     * @returns 
-     */
-    cleanEnemies(enemies: Array<Ship>) {
-        return enemies.filter(e => e.posY + e.size <= this.props.playgroundHeight && e.health > 0)
     }
 
     /**
@@ -500,7 +437,6 @@ class GameBoard extends React.Component<GameProps, GameState>{
         const spacing = Math.floor((this.props.playgroundWidth - enemiesPerRow * (size + 10)) / enemiesPerRow / 2)
         let posYNewRow = posY
         let posXNewShip = 0
-        console.log(spacing)
         const xoffset = posXNewShip
         for (let i = 0, j = 0; i < limit; i++, j++) {
             if (j === enemiesPerRow) {
@@ -517,13 +453,14 @@ class GameBoard extends React.Component<GameProps, GameState>{
 
     render() {
         return (
-            <div style={{ position: 'relative', width: this.props.playgroundWidth, height: this.props.playgroundHeight }}>
+            <div style={{ position: 'relative', width: this.props.playgroundWidth, height: this.props.playgroundHeight }} className={this.state.hit ? 'shakingScreen' : ''}>
                 <canvas id="battleField" width={this.props.playgroundWidth} height={this.props.playgroundHeight}></canvas>
                 <div className='GameStatus'>
                     <div>Lives: {this.state.playerLives}</div>
                     <div>Wave: {this.state.wave}</div>
                     <div>Score: {this.state.score}</div>
                 </div>
+                {this.state.hit && <div className='shotAlert' style={{ width: this.props.playgroundWidth, height: this.props.playgroundHeight }}></div>}
                 {/* <div id="debug" style={{ color: 'red', position: 'absolute', top: 0, left: 0, zIndex: 2 }}></div> */}
             </div>
         )
