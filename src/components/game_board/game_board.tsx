@@ -13,7 +13,8 @@ interface GameState {
     hit: boolean,
     playerLives: number,
     hasLost: boolean,
-    loopId: any
+    loopId: any,
+    shieldsDeployed: boolean
 }
 
 interface GameProps {
@@ -113,7 +114,8 @@ class GameBoard extends React.Component<GameProps, GameState>{
             score: 0,
             playerLives: 3,
             hasLost: false,
-            loopId: 0
+            loopId: 0,
+            shieldsDeployed: false
         }
 
         this.btfld = document.getElementById('battleField') as HTMLCanvasElement
@@ -149,16 +151,19 @@ class GameBoard extends React.Component<GameProps, GameState>{
         this.bullets = Array(0);
         this.enemies = Array(0);
         this.enemyGen = Array(0);
-        this.shields = Array(0);
         this.generatorRunning = 0;
-        const maxShieldWidth = Math.floor(this.props.playgroundWidth / 6);
-        const numberOfShields = 3;
-        const spacing = Math.floor((this.props.playgroundWidth - numberOfShields * (maxShieldWidth)) / numberOfShields / 2);
-        let posx = 0;
-        for (let i = 0; i < numberOfShields; i++) {
-            posx += spacing;
-            this.shields.push(new Shield(9, posx, Math.floor(this.props.playgroundHeight / 2) + maxShieldWidth + this.player.size, maxShieldWidth, maxShieldWidth))
-            posx += spacing + maxShieldWidth;
+        if (!this.state.shieldsDeployed) {
+            this.shields = Array(0);
+            const maxShieldWidth = Math.floor(this.props.playgroundWidth / 6);
+            const numberOfShields = 3;
+            const spacing = Math.floor((this.props.playgroundWidth - numberOfShields * (maxShieldWidth)) / numberOfShields / 2);
+            let posx = 0;
+            for (let i = 0; i < numberOfShields; i++) {
+                posx += spacing;
+                this.shields.push(new Shield(9, posx, Math.floor(this.props.playgroundHeight / 2) + maxShieldWidth + this.player.size, maxShieldWidth, maxShieldWidth))
+                posx += spacing + maxShieldWidth;
+            }
+            this.setState({ shieldsDeployed: true })
         }
         this.isMovinLeft = false;
         this.isMovinRight = false;
