@@ -1,4 +1,4 @@
-import { GL } from "../../utils/logic/game_logic";
+import { GL } from "../../../utils/logic/game_logic";
 import { Bullet } from "../bullet/bullet";
 interface Box2D {
     x0: number,

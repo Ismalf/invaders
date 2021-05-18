@@ -1,10 +1,12 @@
 import React from 'react';
 import './game_board.css';
 import { Ship } from '../ship/ship';
-import { Bullet } from '../bullet/bullet'
-import { GL } from '../../utils/logic/game_logic'
-import { CM } from '../../utils/logic/canvas_management'
+import { Bullet } from '../bullet/bullet';
+import { GL } from '../../../utils/logic/game_logic';
+import { CM } from '../../../utils/logic/canvas_management';
 import { Shield } from '../shield/shield';
+import Transition from '../../animations/transition';
+import * as game_settings from '../../../utils/configs/game_settings.json';
 interface GameState {
     wave: number,
     enemyLimit: number,
@@ -18,11 +20,7 @@ interface GameState {
 }
 
 interface GameProps {
-    shotTimeOut: number,
-    frameRate: number,
-    playgroundWidth: number,
-    playgroundHeight: number,
-    enemyGenerator?: GeneratorFunction
+    
 }
 
 class GameBoard extends React.Component<GameProps, GameState>{
@@ -99,6 +97,10 @@ class GameBoard extends React.Component<GameProps, GameState>{
     nextSpeedBoostIn: number;
 
     shields: Shield[] = [];
+    playgroundHeight: number;
+    playgroundWidth: number;
+    frameRate: number;
+    shotTimeOut: number;
 
 
     constructor(props: GameProps) {
@@ -117,7 +119,10 @@ class GameBoard extends React.Component<GameProps, GameState>{
             loopId: 0,
             shieldsDeployed: false
         }
-
+        this.playgroundHeight = window.innerHeight;
+        this.playgroundWidth = window.innerWidth < 420 ? window.innerWidth : 420;
+        this.frameRate = game_settings["frame_rate"];
+        this.shotTimeOut = game_settings["shot_timeout"];
         this.btfld = document.getElementById('battleField') as HTMLCanvasElement
         this.ctx = this.btfld?.getContext('2d') as CanvasRenderingContext2D
         this.handleKeyDown = this.handleKeyDown.bind(this)
@@ -145,8 +150,8 @@ class GameBoard extends React.Component<GameProps, GameState>{
      * also prepares the enemy generators
      */
     initalizeVars() {
-        const initialXPos = this.props.playgroundWidth / 2 - this.PLAYER_SIZE / 2; // minus half the ship width
-        const initialYPos = this.props.playgroundHeight - this.PLAYER_SIZE; // minus the ship height
+        const initialXPos = this.playgroundWidth / 2 - this.PLAYER_SIZE / 2; // minus half the ship width
+        const initialYPos = this.playgroundHeight - this.PLAYER_SIZE; // minus the ship height
         this.player = new Ship('#00ff00', initialXPos, initialYPos, 32, 'player', 100, 1)
         this.bullets = Array(0);
         this.enemies = Array(0);
@@ -154,13 +159,13 @@ class GameBoard extends React.Component<GameProps, GameState>{
         this.generatorRunning = 0;
         if (!this.state.shieldsDeployed) {
             this.shields = Array(0);
-            const maxShieldWidth = Math.floor(this.props.playgroundWidth / 6);
+            const maxShieldWidth = Math.floor(this.playgroundWidth / 6);
             const numberOfShields = 3;
-            const spacing = Math.floor((this.props.playgroundWidth - numberOfShields * (maxShieldWidth)) / numberOfShields / 2);
+            const spacing = Math.floor((this.playgroundWidth - numberOfShields * (maxShieldWidth)) / numberOfShields / 2);
             let posx = 0;
             for (let i = 0; i < numberOfShields; i++) {
                 posx += spacing;
-                this.shields.push(new Shield(9, posx, Math.floor(this.props.playgroundHeight / 2) + maxShieldWidth + this.player.size, maxShieldWidth, maxShieldWidth))
+                this.shields.push(new Shield(9, posx, Math.floor(this.playgroundHeight / 2) + maxShieldWidth + this.player.size, maxShieldWidth, maxShieldWidth))
                 posx += spacing + maxShieldWidth;
             }
             this.setState({ shieldsDeployed: true })
@@ -168,7 +173,7 @@ class GameBoard extends React.Component<GameProps, GameState>{
         this.isMovinLeft = false;
         this.isMovinRight = false;
         this.isShooting = false;
-        this.enemyGen.push(this.buildShip(this.PLAYER_SIZE, 4 * (Math.floor(this.props.playgroundWidth / (this.PLAYER_SIZE + 10)) - 1), 'r', 35));
+        this.enemyGen.push(this.buildShip(this.PLAYER_SIZE, 4 * (Math.floor(this.playgroundWidth / (this.PLAYER_SIZE + 10)) - 1), 'r', 35));
     }
 
     /**
@@ -249,7 +254,7 @@ class GameBoard extends React.Component<GameProps, GameState>{
     initGame() {
         const ex = () => {
             const loopId = setInterval(() => {
-                CM.clean(this.ctx, this.props.playgroundWidth, this.props.playgroundHeight)
+                CM.clean(this.ctx, this.playgroundWidth, this.playgroundHeight)
                 if (this.nextSpeedBoostIn === 0) {
                     this.enemies.forEach(s => s.speed += 0.05)
                     this.nextSpeedBoostIn = this.ENEMY_SPEED_BOOST_INTERVAL
@@ -263,13 +268,13 @@ class GameBoard extends React.Component<GameProps, GameState>{
                 CM.draw(bullets, [...enemies, this.player], this.ctx, this.shields);
                 this.bullets = bullets
                 this.enemies = enemies
-            }, 1000 / this.props.frameRate);
+            }, 1000 / this.frameRate);
             this.setState({ loopId }) // So it can stop
         }
         const prep = () => setTimeout(() => {
             const n = this.enemyGen[0].next()
             if (!n.done) {
-                CM.clean(this.ctx, this.props.playgroundWidth, this.props.playgroundHeight)
+                CM.clean(this.ctx, this.playgroundWidth, this.playgroundHeight)
                 this.enemies.push(n.value as Ship)
                 CM.draw(this.bullets, [...this.enemies, this.player], this.ctx, this.shields)
                 prep()
@@ -288,7 +293,7 @@ class GameBoard extends React.Component<GameProps, GameState>{
         const enemies = this.enemies.slice()
         if (!enemies.length) {
             clearInterval(this.state.loopId)
-            CM.clean(this.ctx, this.props.playgroundWidth, this.props.playgroundHeight)
+            CM.clean(this.ctx, this.playgroundWidth, this.playgroundHeight)
             this.setState({ wave: this.state.wave + 1 })
             this.initalizeVars()
             this.initGame()
@@ -299,14 +304,14 @@ class GameBoard extends React.Component<GameProps, GameState>{
         let nextPos = this.player.posX;
         if (this.isMovinLeft && nextPos - 1 > 0) { // dont exit playground from the left
             nextPos -= this.PLAYER_SPEED; // move 1 unit to the left
-        } else if (this.isMovinRight && nextPos + 1 + this.player.size < this.props.playgroundWidth) { // dont exit playground from the right
+        } else if (this.isMovinRight && nextPos + 1 + this.player.size < this.playgroundWidth) { // dont exit playground from the right
             nextPos += this.PLAYER_SPEED; // move 1 unit to the right
         }
         this.player.posX = nextPos
         const enemiesBulletCount = bullets.filter(b => b.dir === 'down').length
         enemiesBulletCount === 0 && this.enemiesShot.splice(0)
         //#region swarm movement
-        const moveDown = enemies.every(s => s.dir === 'r') ? enemies.some(s => s.posX + s.size >= this.props.playgroundWidth) : enemies.some(s => s.posX <= 0)
+        const moveDown = enemies.every(s => s.dir === 'r') ? enemies.some(s => s.posX + s.size >= this.playgroundWidth) : enemies.some(s => s.posX <= 0)
         if (moveDown) {
             const canMoveDown = enemies.every(e => this.shields.every(s => s._shieldLayout.every(r => r.every(c => e.posY + e.size < c.y0 - e.size))))
             if (canMoveDown) {
@@ -345,9 +350,9 @@ class GameBoard extends React.Component<GameProps, GameState>{
                 b.posY += maxTravel ?? b.vel;
             }
         })
-        let cenemiesRes = GL.cleanEnemies(enemies, this.props.playgroundHeight);
+        let cenemiesRes = GL.cleanEnemies(enemies, this.playgroundHeight);
         if (cenemiesRes.count) this.setState({ playerLives: this.state.playerLives - 1 });
-        return { bullets: GL.cleanBullets(bullets, this.props.playgroundHeight), enemies: cenemiesRes.enemies };
+        return { bullets: GL.cleanBullets(bullets, this.playgroundHeight), enemies: cenemiesRes.enemies };
     }
 
     checkBulletCollision(b: Bullet, enemies: Array<Ship>, player: Ship, shields: Shield[]) {
@@ -405,8 +410,8 @@ class GameBoard extends React.Component<GameProps, GameState>{
     generateBullets(fatherx: number, fathery: number, dir?: string, isEnemy?: boolean) {
         if (this.nextShotIn !== 0 && !isEnemy) return [];
         const size = 10
-        !isEnemy && setTimeout(() => this.nextShotIn = 0, this.props.shotTimeOut);
-        !isEnemy && (this.nextShotIn = this.props.shotTimeOut)
+        !isEnemy && setTimeout(() => this.nextShotIn = 0, this.shotTimeOut);
+        !isEnemy && (this.nextShotIn = this.shotTimeOut)
         return [new Bullet('#ff0000', dir ?? 'up', this.BULLET_SPEED, fatherx - size / 2, fathery, size, this.BULLET_DMG)]
     }
 
@@ -417,7 +422,7 @@ class GameBoard extends React.Component<GameProps, GameState>{
     generateEnemies() {
         const enemies = this.enemies.slice() // Enemy array copy
         const last_gen_enemy = enemies[enemies.length - 1]
-        if ((last_gen_enemy && last_gen_enemy.posX > 0 && last_gen_enemy.posX + last_gen_enemy.size < this.props.playgroundWidth)
+        if ((last_gen_enemy && last_gen_enemy.posX > 0 && last_gen_enemy.posX + last_gen_enemy.size < this.playgroundWidth)
             || !last_gen_enemy) {
 
             const gen = this.enemyGen[this.generatorRunning].next() // Enemy Generator
@@ -438,8 +443,8 @@ class GameBoard extends React.Component<GameProps, GameState>{
      * @param posY the y axis where the enemies will start moving
      */
     * buildShip(size: number, limit: number, dir: string, posY: number): Generator<Ship> {
-        const enemiesPerRow = Math.floor(this.props.playgroundWidth / (size + 10)) - 1
-        const spacing = Math.floor((this.props.playgroundWidth - enemiesPerRow * (size + 10)) / enemiesPerRow / 2)
+        const enemiesPerRow = Math.floor(this.playgroundWidth / (size + 10)) - 1
+        const spacing = Math.floor((this.playgroundWidth - enemiesPerRow * (size + 10)) / enemiesPerRow / 2)
         let posYNewRow = posY
         let posXNewShip = 0
         const xoffset = posXNewShip
@@ -458,16 +463,18 @@ class GameBoard extends React.Component<GameProps, GameState>{
 
     render() {
         return (
-            <div style={{ position: 'relative', width: this.props.playgroundWidth, height: this.props.playgroundHeight }} className={this.state.hit ? 'shakingScreen' : ''}>
-                <canvas id="battleField" width={this.props.playgroundWidth} height={this.props.playgroundHeight}></canvas>
-                <div className='GameStatus'>
-                    <div>Lives: {this.state.playerLives}</div>
-                    <div>Wave: {this.state.wave}</div>
-                    <div>Score: {this.state.score}</div>
+            <Transition>
+                <div style={{ position: 'relative', width: this.playgroundWidth, height: this.playgroundHeight }} className={this.state.hit ? 'shakingScreen' : ''}>
+                    <canvas id="battleField" width={this.playgroundWidth} height={this.playgroundHeight}></canvas>
+                    <div className='GameStatus'>
+                        <div>Lives: {this.state.playerLives}</div>
+                        <div>Wave: {this.state.wave}</div>
+                        <div>Score: {this.state.score}</div>
+                    </div>
+                    {this.state.hit &&  <div className='shotAlert' style={{ width: this.playgroundWidth+20, height: this.playgroundHeight }}></div>}
+                    {/* <div id="debug" style={{ color: 'red', position: 'absolute', top: 0, left: 0, zIndex: 2 }}></div> */}
                 </div>
-                {this.state.hit && <div className='shotAlert' style={{ width: this.props.playgroundWidth, height: this.props.playgroundHeight }}></div>}
-                {/* <div id="debug" style={{ color: 'red', position: 'absolute', top: 0, left: 0, zIndex: 2 }}></div> */}
-            </div>
+            </Transition>
         )
     }
 }
