@@ -1,6 +1,6 @@
 import React from 'react';
 import GameBoard from './components/game_objects/game_board/game_board';
-import Menu from './components/pages/menu'
+import Menu from './components/pages/menu/menu'
 import './App.css';
 
 // comandos para red hospedada

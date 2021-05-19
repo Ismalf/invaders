@@ -11,7 +11,7 @@ const fadeIn = keyframes`
 `;
 
 const StyledWrapper = styled.div`
-  animation: ${fadeIn} 0.5s;
+  animation: ${fadeIn} 1s;
   /* height:100%; */
 `;
 
