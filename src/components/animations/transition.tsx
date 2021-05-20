@@ -1,10 +1,10 @@
 import styled, { keyframes } from 'styled-components';
 const fadeIn = keyframes`
-    0%{
+    0% {
         opacity:0;
         transform: translateY(20px);
     }
-    100%{
+    100% {
         opacity:1;
         transform: translateY(0);
     }
@@ -12,7 +12,13 @@ const fadeIn = keyframes`
 
 const StyledWrapper = styled.div`
   animation: ${fadeIn} 1s;
-  /* height:100%; */
+  height: inherit;
+  width:  inherit;
+  display: inherit;
+  flex: inherit;
+  flex-direction: inherit;
+  align-items: inherit;
+  justify-content: inherit;
 `;
 
 const Wrapper = ({ children }: any) => {

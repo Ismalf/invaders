@@ -464,7 +464,7 @@ class GameBoard extends React.Component<GameProps, GameState>{
     render() {
         return (
             <Transition>
-                <div style={{ position: 'relative', width: this.playgroundWidth, height: this.playgroundHeight }} className={this.state.hit ? 'shakingScreen' : ''}>
+                <div style={{ position: 'relative', width: this.playgroundWidth, height: this.playgroundHeight }} className={'gameboard ' + (this.state.hit ? 'shakingScreen' : '')}>
                     <canvas id="battleField" width={this.playgroundWidth} height={this.playgroundHeight}></canvas>
                     <div className='GameStatus'>
                         <div>Lives: {this.state.playerLives}</div>
