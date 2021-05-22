@@ -1,22 +1,22 @@
 {
   "files": {
-    "main.css": "/space_invaders/static/css/main.689e6915.chunk.css",
-    "main.js": "/space_invaders/static/js/main.8081e57a.chunk.js",
-    "main.js.map": "/space_invaders/static/js/main.8081e57a.chunk.js.map",
+    "main.css": "/space_invaders/static/css/main.00720af2.chunk.css",
+    "main.js": "/space_invaders/static/js/main.a3842b82.chunk.js",
+    "main.js.map": "/space_invaders/static/js/main.a3842b82.chunk.js.map",
     "runtime-main.js": "/space_invaders/static/js/runtime-main.b90a0dac.js",
     "runtime-main.js.map": "/space_invaders/static/js/runtime-main.b90a0dac.js.map",
-    "static/js/2.e148c732.chunk.js": "/space_invaders/static/js/2.e148c732.chunk.js",
-    "static/js/2.e148c732.chunk.js.map": "/space_invaders/static/js/2.e148c732.chunk.js.map",
+    "static/js/2.b87e2f12.chunk.js": "/space_invaders/static/js/2.b87e2f12.chunk.js",
+    "static/js/2.b87e2f12.chunk.js.map": "/space_invaders/static/js/2.b87e2f12.chunk.js.map",
     "static/js/3.493bc04b.chunk.js": "/space_invaders/static/js/3.493bc04b.chunk.js",
     "static/js/3.493bc04b.chunk.js.map": "/space_invaders/static/js/3.493bc04b.chunk.js.map",
     "index.html": "/space_invaders/index.html",
-    "static/css/main.689e6915.chunk.css.map": "/space_invaders/static/css/main.689e6915.chunk.css.map",
-    "static/js/2.e148c732.chunk.js.LICENSE.txt": "/space_invaders/static/js/2.e148c732.chunk.js.LICENSE.txt"
+    "static/css/main.00720af2.chunk.css.map": "/space_invaders/static/css/main.00720af2.chunk.css.map",
+    "static/js/2.b87e2f12.chunk.js.LICENSE.txt": "/space_invaders/static/js/2.b87e2f12.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
     "static/js/runtime-main.b90a0dac.js",
-    "static/js/2.e148c732.chunk.js",
-    "static/css/main.689e6915.chunk.css",
-    "static/js/main.8081e57a.chunk.js"
+    "static/js/2.b87e2f12.chunk.js",
+    "static/css/main.00720af2.chunk.css",
+    "static/js/main.a3842b82.chunk.js"
   ]
 }
