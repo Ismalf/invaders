@@ -7,6 +7,8 @@ import { CM } from '../../../utils/logic/canvas_management';
 import { Shield } from '../shield/shield';
 import Transition from '../../animations/transition';
 import * as game_settings from '../../../utils/configs/game_settings.json';
+import { Redirect } from 'react-router';
+
 interface GameState {
     wave: number,
     enemyLimit: number,
@@ -20,7 +22,7 @@ interface GameState {
 }
 
 interface GameProps {
-    
+
 }
 
 class GameBoard extends React.Component<GameProps, GameState>{
@@ -289,15 +291,17 @@ class GameBoard extends React.Component<GameProps, GameState>{
     }
 
     moveEls(e: Array<Ship>) {
-        const bullets = this.bullets.slice()
-        const enemies = this.enemies.slice()
+        const bullets = this.bullets.slice();
+        const enemies = this.enemies.slice();
+
+
         if (!enemies.length) {
-            clearInterval(this.state.loopId)
-            CM.clean(this.ctx, this.playgroundWidth, this.playgroundHeight)
-            this.setState({ wave: this.state.wave + 1 })
-            this.initalizeVars()
-            this.initGame()
-            return { bullets: [], enemies: [] }
+            clearInterval(this.state.loopId);
+            CM.clean(this.ctx, this.playgroundWidth, this.playgroundHeight);
+            this.setState({ wave: this.state.wave + 1 });
+            this.initalizeVars();
+            this.initGame();
+            return { bullets: [], enemies: [] };
         }
         // Player Position
         // const newCount = state.nextShotIn > 0 ? state.nextShotIn - 1 : 0
@@ -307,9 +311,8 @@ class GameBoard extends React.Component<GameProps, GameState>{
         } else if (this.isMovinRight && nextPos + 1 + this.player.size < this.playgroundWidth) { // dont exit playground from the right
             nextPos += this.PLAYER_SPEED; // move 1 unit to the right
         }
-        this.player.posX = nextPos
-        const enemiesBulletCount = bullets.filter(b => b.dir === 'down').length
-        enemiesBulletCount === 0 && this.enemiesShot.splice(0)
+        this.player.posX = nextPos;
+        bullets.filter(b => b.dir === 'down').length === 0 && this.enemiesShot.splice(0);
         //#region swarm movement
         const moveDown = enemies.every(s => s.dir === 'r') ? enemies.some(s => s.posX + s.size >= this.playgroundWidth) : enemies.some(s => s.posX <= 0)
         if (moveDown) {
@@ -460,8 +463,23 @@ class GameBoard extends React.Component<GameProps, GameState>{
             yield enemy
         }
     }
-
+    recordScore() {
+        const hs = localStorage.getItem('highScore');
+        if (!hs) {
+            localStorage.setItem('highScore', this.state.score.toString());
+        } else {
+            let nhs = +hs < this.state.score ? this.state.score : +hs;
+            localStorage.setItem('highScore', nhs.toString());
+            localStorage.setItem('matchScore', this.state.score.toString());
+        }
+    }
     render() {
+        if (this.state.hasLost) {
+            this.recordScore();
+            return (
+                <Redirect to="/score" />
+            )
+        }
         return (
             <Transition>
                 <div style={{ position: 'relative', width: this.playgroundWidth, height: this.playgroundHeight }} className={'gameboard ' + (this.state.hit ? 'shakingScreen' : '')}>
@@ -471,11 +489,12 @@ class GameBoard extends React.Component<GameProps, GameState>{
                         <div>Wave: {this.state.wave}</div>
                         <div>Score: {this.state.score}</div>
                     </div>
-                    {this.state.hit &&  <div className='shotAlert' style={{ width: this.playgroundWidth+20, height: this.playgroundHeight }}></div>}
+                    {this.state.hit && <div className='shotAlert' style={{ width: this.playgroundWidth + 20, height: this.playgroundHeight }}></div>}
                     {/* <div id="debug" style={{ color: 'red', position: 'absolute', top: 0, left: 0, zIndex: 2 }}></div> */}
                 </div>
             </Transition>
-        )
+        );
+
     }
 }
 

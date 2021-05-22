@@ -1,17 +1,18 @@
-import React from 'react';
-import GameBoard from './components/game_objects/game_board/game_board';
-import Menu from './components/pages/menu/menu'
-import './App.css';
 
+import './App.css';
+import Routes from './components/routes/routes';
+import { BrowserRouter as Router } from "react-router-dom";
 // comandos para red hospedada
 // netsh wlan set hostednetwork mode=allow ssid=testsi key=12345678
 // netsh wlan start hostednetwork
 // ($env:HTTPS = "true") -and (npm start)
 function App() {
   return (
-    <div className="gamescreen">
-      <Menu />
-    </div>
+    <Router>
+      <div className="gamescreen">
+        <Routes />
+      </div>
+    </Router>
   );
 }
 
