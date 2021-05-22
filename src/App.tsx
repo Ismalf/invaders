@@ -1,7 +1,7 @@
 
 import './App.css';
 import Routes from './components/routes/routes';
-import { BrowserRouter as Router } from "react-router-dom";
+import { HashRouter as Router } from "react-router-dom";
 // comandos para red hospedada
 // netsh wlan set hostednetwork mode=allow ssid=testsi key=12345678
 // netsh wlan start hostednetwork
