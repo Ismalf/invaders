@@ -1,11 +1,5 @@
 import React from "react";
-import {
-    BrowserRouter as Router,
-    Route,
-    Switch,
-    NavLink,
-    Redirect,
-} from "react-router-dom";
+import { Redirect } from "react-router-dom";
 import Transition from '../../animations/transition';
 import { MenuItemList, MenuScreen, Title, MenuItemContent, MenuItem, SubTitle } from '../../styled_components/menu_styled_components'
 interface MenuState {
@@ -21,7 +15,6 @@ class Score extends React.Component<{}, MenuState> {
         }
         this.hs = +(localStorage.getItem('highScore') ?? '0');
         this.ms = +(localStorage.getItem('matchScore') ?? '0');
-        console.log(this.hs, this.ms, (this.ms > this.hs))
     }
     render() {
         if (this.state.redirectTo) {
