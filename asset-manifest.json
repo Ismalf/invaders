@@ -1,22 +1,22 @@
 {
   "files": {
-    "main.css": "/invaders/static/css/main.a294d4a1.chunk.css",
-    "main.js": "/invaders/static/js/main.155eaef1.chunk.js",
-    "main.js.map": "/invaders/static/js/main.155eaef1.chunk.js.map",
+    "main.css": "/invaders/static/css/main.eddc5d37.chunk.css",
+    "main.js": "/invaders/static/js/main.ae7ba8e0.chunk.js",
+    "main.js.map": "/invaders/static/js/main.ae7ba8e0.chunk.js.map",
     "runtime-main.js": "/invaders/static/js/runtime-main.8af0be61.js",
     "runtime-main.js.map": "/invaders/static/js/runtime-main.8af0be61.js.map",
-    "static/js/2.07a805e1.chunk.js": "/invaders/static/js/2.07a805e1.chunk.js",
-    "static/js/2.07a805e1.chunk.js.map": "/invaders/static/js/2.07a805e1.chunk.js.map",
+    "static/js/2.7e54ec84.chunk.js": "/invaders/static/js/2.7e54ec84.chunk.js",
+    "static/js/2.7e54ec84.chunk.js.map": "/invaders/static/js/2.7e54ec84.chunk.js.map",
     "static/js/3.493bc04b.chunk.js": "/invaders/static/js/3.493bc04b.chunk.js",
     "static/js/3.493bc04b.chunk.js.map": "/invaders/static/js/3.493bc04b.chunk.js.map",
     "index.html": "/invaders/index.html",
-    "static/css/main.a294d4a1.chunk.css.map": "/invaders/static/css/main.a294d4a1.chunk.css.map",
-    "static/js/2.07a805e1.chunk.js.LICENSE.txt": "/invaders/static/js/2.07a805e1.chunk.js.LICENSE.txt"
+    "static/css/main.eddc5d37.chunk.css.map": "/invaders/static/css/main.eddc5d37.chunk.css.map",
+    "static/js/2.7e54ec84.chunk.js.LICENSE.txt": "/invaders/static/js/2.7e54ec84.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
     "static/js/runtime-main.8af0be61.js",
-    "static/js/2.07a805e1.chunk.js",
-    "static/css/main.a294d4a1.chunk.css",
-    "static/js/main.155eaef1.chunk.js"
+    "static/js/2.7e54ec84.chunk.js",
+    "static/css/main.eddc5d37.chunk.css",
+    "static/js/main.ae7ba8e0.chunk.js"
   ]
 }
