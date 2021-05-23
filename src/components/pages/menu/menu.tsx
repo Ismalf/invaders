@@ -18,7 +18,7 @@ class Menu extends React.Component<{}, MenuState> {
     render() {
         if (this.state.redirectTo) {
             return (
-                <Redirect to={this.state.redirectTo}></Redirect>
+                <Redirect push to={this.state.redirectTo}></Redirect>
             );
         }
         return (

@@ -50,6 +50,11 @@ const MenuItem = styled.div`
         margin-left: 0.3em;
         transform: rotate(15deg);
     }
+    :active{
+        box-shadow: inset 254px 0 0 0 white;
+        color: black;
+        transform: scale(1.5);
+    }
 `;
 
 const MenuItemContent = styled.div`
