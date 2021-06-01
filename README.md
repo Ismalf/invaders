@@ -1,3 +1,5 @@
+# Play the demo 
+A demo of the game is available [here](https://ismalf.github.io/invaders/)
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
