@@ -1,3 +1,6 @@
+# Footage
+![Game footage](images/gamexample2.png)
+![Game footage](images/gamexample1.png)
 # Give it a try!
 A live version of the game is available [here](https://ismalf.github.io/invaders/)
 ## Controlls
