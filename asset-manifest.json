@@ -1,8 +1,8 @@
 {
   "files": {
     "main.css": "/invaders/static/css/main.3cb93fbd.chunk.css",
-    "main.js": "/invaders/static/js/main.5d79f3f1.chunk.js",
-    "main.js.map": "/invaders/static/js/main.5d79f3f1.chunk.js.map",
+    "main.js": "/invaders/static/js/main.342784fb.chunk.js",
+    "main.js.map": "/invaders/static/js/main.342784fb.chunk.js.map",
     "runtime-main.js": "/invaders/static/js/runtime-main.8af0be61.js",
     "runtime-main.js.map": "/invaders/static/js/runtime-main.8af0be61.js.map",
     "static/js/2.9797d3f5.chunk.js": "/invaders/static/js/2.9797d3f5.chunk.js",
@@ -17,6 +17,6 @@
     "static/js/runtime-main.8af0be61.js",
     "static/js/2.9797d3f5.chunk.js",
     "static/css/main.3cb93fbd.chunk.css",
-    "static/js/main.5d79f3f1.chunk.js"
+    "static/js/main.342784fb.chunk.js"
   ]
 }
