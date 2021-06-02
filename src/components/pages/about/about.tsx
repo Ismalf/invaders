@@ -30,13 +30,13 @@ class About extends React.Component<{}, AboutState> {
                     <MenuItemList style={{height:'70%'}}>
                         <SubTitle style={{ margin: '0 auto'}}>Controls</SubTitle>
                         <AboutParagraph style={{textAlign:'justify'}}>
-                            <span style={{color:'orange'}}>PC</span> : use arrow keys (left and right) to move.
-                            Arrow Up is used to shoot.
+                            <span style={{color:'orange'}}>PC</span>: use left and right arrow keys to move.
+                            Up arrow is used to shoot.
                             <br></br>
-                            <span style={{color:'#01ff01'}}>Android</span> : tilt your phone to move. Tap to shoot.
+                            <span style={{color:'#01ff01'}}>Android</span>: tilt your phone to move. Tap to shoot.
                             <br />
-                            <span style={{color:'#01e4ff'}}>iOS</span> : Working on a way to control the ship without the accelerometer, 
-                            as the Acceleration API is not supported
+                            <span style={{color:'#01e4ff'}}>iOS</span>: working on a way to control the ship without using the device's accelerometer, 
+                            as the Acceleration API is not supported.
                         </AboutParagraph>
                     </MenuItemList>
 
