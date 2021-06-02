@@ -1,10 +1,10 @@
 import React from 'react';
 import './game_board.css';
-import { Ship } from '../ship/ship';
-import { Bullet } from '../bullet/bullet';
+import { Ship } from '../../../classes/game_objects/ship/ship';
+import { Bullet } from '../../../classes/game_objects/bullet/bullet';
 import { GL } from '../../../utils/logic/game_logic';
 import { CM } from '../../../utils/logic/canvas_management';
-import { Shield } from '../shield/shield';
+import { Shield } from '../../../classes/game_objects/shield/shield';
 import Transition from '../../animations/transition';
 import * as game_settings from '../../../utils/configs/game_settings.json';
 import { Redirect } from 'react-router';
@@ -21,12 +21,11 @@ interface GameState {
     shieldsDeployed: boolean
 }
 
-interface GameProps {
-
-}
+interface GameProps { }
 
 class GameBoard extends React.Component<GameProps, GameState>{
 
+    //#region attributes
     /**
      * Array of generators to populate screen with different patterns of enemies
      */
@@ -52,18 +51,6 @@ class GameBoard extends React.Component<GameProps, GameState>{
      * while keeping the number of bullets to a certain limit
      */
     enemiesShot: number[] = [];
-
-    readonly BULLET_SPEED: number = 5;
-    readonly BULLET_DMG: number = 100;
-    readonly ENEMY_HP: number = 100;
-    readonly ENEMY_SPEED: number = 0.1;
-    readonly PLAYER_SPEED: number = 2;
-    readonly VERTICAL_OFFSET: number = 5;
-    readonly ENEMY_SHOT_INTERVAL: number = 1000;
-    readonly ENEMY_SPEED_BOOST_INTERVAL: number = 10000;
-    readonly LIMIT_OF_ENEMY_SHIPS_ON_SCREEN: number = 100;
-    readonly PLAYER_SIZE = 32;
-
     /**
      * Object representing the player on the screen
      */
@@ -97,23 +84,29 @@ class GameBoard extends React.Component<GameProps, GameState>{
      * @param props 
      */
     nextSpeedBoostIn: number;
-
+    /**
+     * Group of shields refreshed every new game
+     */
     shields: Shield[] = [];
+    /**
+     * How tall is the screen in which the game is being played
+     */
     playgroundHeight: number;
+    /**
+     * The width of the screen in which the game is being played
+     */
     playgroundWidth: number;
-    frameRate: number;
-    shotTimeOut: number;
-
+    //#endregion
 
     constructor(props: GameProps) {
         super(props);
         this.nextShotIn = 0
         this.nextEnemyShotIn = 0
-        this.nextSpeedBoostIn = this.ENEMY_SPEED_BOOST_INTERVAL
+        this.nextSpeedBoostIn = game_settings['ENEMY_SPEED_BOOST_INTERVAL']
         this.state = {
             hit: false,
             wave: 1,
-            enemyLimit: this.LIMIT_OF_ENEMY_SHIPS_ON_SCREEN,
+            enemyLimit: game_settings['LIMIT_OF_ENEMY_SHIPS_ON_SCREEN'],
             maxScore: 0,
             score: 0,
             playerLives: 3,
@@ -123,8 +116,6 @@ class GameBoard extends React.Component<GameProps, GameState>{
         }
         this.playgroundHeight = window.innerHeight;
         this.playgroundWidth = window.innerWidth < 420 ? window.innerWidth : 420;
-        this.frameRate = game_settings["frame_rate"];
-        this.shotTimeOut = game_settings["shot_timeout"];
         this.btfld = document.getElementById('battleField') as HTMLCanvasElement
         this.ctx = this.btfld?.getContext('2d') as CanvasRenderingContext2D
         this.handleKeyDown = this.handleKeyDown.bind(this)
@@ -152,8 +143,8 @@ class GameBoard extends React.Component<GameProps, GameState>{
      * also prepares the enemy generators
      */
     initalizeVars() {
-        const initialXPos = this.playgroundWidth / 2 - this.PLAYER_SIZE / 2; // minus half the ship width
-        const initialYPos = this.playgroundHeight - this.PLAYER_SIZE; // minus the ship height
+        const initialXPos = this.playgroundWidth / 2 - game_settings['PLAYER_SIZE'] / 2; // minus half the ship width
+        const initialYPos = this.playgroundHeight - game_settings['PLAYER_SIZE']; // minus the ship height
         this.player = new Ship('#00ff00', initialXPos, initialYPos, 32, 'player', 100, 1)
         this.bullets = Array(0);
         this.enemies = Array(0);
@@ -175,7 +166,7 @@ class GameBoard extends React.Component<GameProps, GameState>{
         this.isMovinLeft = false;
         this.isMovinRight = false;
         this.isShooting = false;
-        this.enemyGen.push(this.buildShip(this.PLAYER_SIZE, 4 * (Math.floor(this.playgroundWidth / (this.PLAYER_SIZE + 10)) - 1), 'r', 35));
+        this.enemyGen.push(this.buildShip(game_settings['PLAYER_SIZE'], 4 * (Math.floor(this.playgroundWidth / (game_settings['PLAYER_SIZE'] + 10)) - 1), 'r', 35));
     }
 
     /**
@@ -253,48 +244,69 @@ class GameBoard extends React.Component<GameProps, GameState>{
     /**
      * Starts the game loop, performing drawing and collision detection calculations
      */
-    initGame() {
-        const ex = () => {
-            const loopId = setInterval(() => {
-                CM.clean(this.ctx, this.playgroundWidth, this.playgroundHeight)
-                if (this.nextSpeedBoostIn === 0) {
-                    this.enemies.forEach(s => s.speed += 0.05)
-                    this.nextSpeedBoostIn = this.ENEMY_SPEED_BOOST_INTERVAL
-                    setTimeout(() => this.nextSpeedBoostIn = 0, this.ENEMY_SPEED_BOOST_INTERVAL)
-                }
-                const { posX, posY, size } = this.player
-                this.isShooting && this.bullets.push(...this.generateBullets(posX + size / 2, posY - size))
-                // const e = this.enemies.length < this.state.enemyLimit ? this.generateEnemies() : this.enemies
-                const e = this.enemies
-                const { bullets, enemies } = this.moveEls(e);
-                CM.draw(bullets, [...enemies, this.player], this.ctx, this.shields);
-                this.bullets = bullets
-                this.enemies = enemies
-            }, 1000 / this.frameRate);
-            this.setState({ loopId }) // So it can stop
-        }
-        const prep = () => setTimeout(() => {
-            const n = this.enemyGen[0].next()
-            if (!n.done) {
-                CM.clean(this.ctx, this.playgroundWidth, this.playgroundHeight)
-                this.enemies.push(n.value as Ship)
-                CM.draw(this.bullets, [...this.enemies, this.player], this.ctx, this.shields)
-                prep()
-            } else {
-                setTimeout(() => this.nextSpeedBoostIn = 0, this.ENEMY_SPEED_BOOST_INTERVAL)
-                ex()
+    initGame() { this.prepareGameScreen(); }
+
+    /**
+     * Starts the game loop once the initial animation of appearing enemies finishes
+     */
+    executeGame() {
+        const loopId = setInterval(() => {
+
+            // Clears the screen so a new frame can be rendered
+            CM.clean(this.ctx, this.playgroundWidth, this.playgroundHeight);
+
+            // Increases the enemies speed once a certain amount of time has passed
+            if (this.nextSpeedBoostIn === 0) {
+                this.enemies.forEach(s => s.speed += 0.05);
+                this.nextSpeedBoostIn = game_settings['ENEMY_SPEED_BOOST_INTERVAL'];
+                setTimeout(() => this.nextSpeedBoostIn = 0, game_settings['ENEMY_SPEED_BOOST_INTERVAL']);
             }
-        }, 100)
 
-        prep()
+            const { posX, posY, size } = this.player;
 
+            // check if the player is shooting and generate new bullets
+            this.isShooting && this.bullets.push(...this.generateBullets(posX + size / 2, posY - size));
+
+            // move all the elements on screen to their new position
+            const { bullets, enemies } = this.moveEls();
+
+            // render the new frame
+            CM.draw(bullets, [...enemies, this.player], this.ctx, this.shields);
+
+            // update the bullets and enemies
+            this.bullets = bullets;
+            this.enemies = enemies;
+        }, 1000 / game_settings['frame_rate']);
+        this.setState({ loopId }); // Set the loop ID so it can be stopped once the player looses
     }
 
-    moveEls(e: Array<Ship>) {
+    /**
+     * Plays the animation of the enemy ships appearing on the screen.
+     * Once all the ships are in place the game loop starts 
+     */
+    prepareGameScreen() {
+        setTimeout(() => {
+            const n = this.enemyGen[0].next();
+            if (!n.done) {
+                CM.clean(this.ctx, this.playgroundWidth, this.playgroundHeight);
+                this.enemies.push(n.value as Ship);
+                CM.draw(this.bullets, [...this.enemies, this.player], this.ctx, this.shields);
+                this.prepareGameScreen();
+            } else {
+                // Waits for x time to increase the enemy ships speed
+                setTimeout(() => this.nextSpeedBoostIn = 0, game_settings['ENEMY_SPEED_BOOST_INTERVAL']);
+                this.executeGame();
+            }
+        }, 100)
+    }
+
+    /**
+     * Performs calculations to move game objects 
+     * @returns the updated enemies and bullets
+     */
+    moveEls() {
         const bullets = this.bullets.slice();
         const enemies = this.enemies.slice();
-
-
         if (!enemies.length) {
             clearInterval(this.state.loopId);
             CM.clean(this.ctx, this.playgroundWidth, this.playgroundHeight);
@@ -307,30 +319,40 @@ class GameBoard extends React.Component<GameProps, GameState>{
         // const newCount = state.nextShotIn > 0 ? state.nextShotIn - 1 : 0
         let nextPos = this.player.posX;
         if (this.isMovinLeft && nextPos - 1 > 0) { // dont exit playground from the left
-            nextPos -= this.PLAYER_SPEED; // move 1 unit to the left
+            nextPos -= game_settings['PLAYER_SPEED']; // move 1 unit to the left
         } else if (this.isMovinRight && nextPos + 1 + this.player.size < this.playgroundWidth) { // dont exit playground from the right
-            nextPos += this.PLAYER_SPEED; // move 1 unit to the right
+            nextPos += game_settings['PLAYER_SPEED']; // move 1 unit to the right
         }
         this.player.posX = nextPos;
+
+        // If there are no bullets from enemies clean the enemies shot array
         bullets.filter(b => b.dir === 'down').length === 0 && this.enemiesShot.splice(0);
+
         //#region swarm movement
+
+        // Move down if at least one enemy ship is at the border of the screen
         const moveDown = enemies.every(s => s.dir === 'r') ? enemies.some(s => s.posX + s.size >= this.playgroundWidth) : enemies.some(s => s.posX <= 0)
         if (moveDown) {
+            // checks if there is enough space for the enemy ships to decend due to the shields
+            // on the field
             const canMoveDown = enemies.every(e => this.shields.every(s => s._shieldLayout.every(r => r.every(c => e.posY + e.size < c.y0 - e.size))))
             if (canMoveDown) {
-                enemies.forEach(s => { s.posY += 5 + this.VERTICAL_OFFSET; s.dir = s.dir === 'r' ? 'l' : 'r' });
+                // If it is possible moves the enemies down and changes the direction in which they move
+                enemies.forEach(s => { s.posY += 5 + game_settings['VERTICAL_OFFSET']; s.dir = s.dir === 'r' ? 'l' : 'r' });
             } else {
+                // If it is not possible, enemies start to aim at the shields standing on the field
                 enemies.forEach((ship, i) => {
                     if (this.nextEnemyShotIn === 0 && GL.shootShields(i, enemies, this.shields) && !this.enemiesShot.includes(i)) {
                         bullets.push(...this.generateBullets(ship.posX + ship.size / 2, ship.posY + ship.size, 'down', true));
                         this.enemiesShot.push(i);
-                        this.nextEnemyShotIn = this.ENEMY_SHOT_INTERVAL;
-                        setTimeout(() => this.nextEnemyShotIn = 0, this.ENEMY_SHOT_INTERVAL);
+                        this.nextEnemyShotIn = game_settings['ENEMY_SHOT_INTERVAL'];
+                        setTimeout(() => this.nextEnemyShotIn = 0, game_settings['ENEMY_SHOT_INTERVAL']);
                     }
                     ship.dir = ship.dir === 'r' ? 'l' : 'r';
                 })
             }
         } else {
+            // If not just keep moving in the same direction
             enemies.forEach(s => s.posX += s.dir === 'r' ? s.speed : -s.speed);
         }
         const shipI = enemies.findIndex((s, i) => GL.isAbleToShoot(i, enemies, this.player) && !this.enemiesShot.includes(i));
@@ -338,8 +360,8 @@ class GameBoard extends React.Component<GameProps, GameState>{
             const ship = enemies[shipI];
             bullets.push(...this.generateBullets(ship.posX + ship.size / 2, ship.posY + ship.size, 'down', true));
             this.enemiesShot.push(shipI);
-            this.nextEnemyShotIn = this.ENEMY_SHOT_INTERVAL;
-            setTimeout(() => this.nextEnemyShotIn = 0, this.ENEMY_SHOT_INTERVAL);
+            this.nextEnemyShotIn = game_settings['ENEMY_SHOT_INTERVAL'];
+            setTimeout(() => this.nextEnemyShotIn = 0, game_settings['ENEMY_SHOT_INTERVAL']);
         }
         //#endregion
 
@@ -353,11 +375,22 @@ class GameBoard extends React.Component<GameProps, GameState>{
                 b.posY += maxTravel ?? b.vel;
             }
         })
+
         let cenemiesRes = GL.cleanEnemies(enemies, this.playgroundHeight);
         if (cenemiesRes.count) this.setState({ playerLives: this.state.playerLives - 1 });
         return { bullets: GL.cleanBullets(bullets, this.playgroundHeight), enemies: cenemiesRes.enemies };
     }
 
+    /**
+     * Calculates if a bullet collides with a ship (wheter its an enemy or the player) 
+     * or a shield
+     * 
+     * @param b bullet to check collision
+     * @param enemies enemies on screen
+     * @param player player 
+     * @param shields list of shields on screen
+     * @returns the distance that can be travelled by the bullet
+     */
     checkBulletCollision(b: Bullet, enemies: Array<Ship>, player: Ship, shields: Shield[]) {
         for (let s of shields) {
             const block = s.checkCollision(b);
@@ -390,8 +423,8 @@ class GameBoard extends React.Component<GameProps, GameState>{
             if (GL.collX(player.posX, player.posX + player.size, b.posX, b.posX + b.size) && GL.collY(player.posY, player.posY + player.size, b.posY, b.posY + b.size)) {
                 let playerLives = this.state.playerLives;
                 let hasLost = !--playerLives ? true : false;
-                setTimeout(() => this.setState({ hit: false }), 200)
                 hasLost && clearInterval(this.state.loopId);
+                !hasLost && setTimeout(() => this.setState({ hit: false }), 200)
                 this.setState({ playerLives, hasLost, hit: true });
                 b.dmg = 0;
                 const d = player.posY - b.posY;
@@ -413,29 +446,9 @@ class GameBoard extends React.Component<GameProps, GameState>{
     generateBullets(fatherx: number, fathery: number, dir?: string, isEnemy?: boolean) {
         if (this.nextShotIn !== 0 && !isEnemy) return [];
         const size = 10
-        !isEnemy && setTimeout(() => this.nextShotIn = 0, this.shotTimeOut);
-        !isEnemy && (this.nextShotIn = this.shotTimeOut)
-        return [new Bullet('#ff0000', dir ?? 'up', this.BULLET_SPEED, fatherx - size / 2, fathery, size, this.BULLET_DMG)]
-    }
-
-    /**
-     * Uses one of the generators set to build enemies and returns a new enemy ship to be drawn
-     * @returns 
-     */
-    generateEnemies() {
-        const enemies = this.enemies.slice() // Enemy array copy
-        const last_gen_enemy = enemies[enemies.length - 1]
-        if ((last_gen_enemy && last_gen_enemy.posX > 0 && last_gen_enemy.posX + last_gen_enemy.size < this.playgroundWidth)
-            || !last_gen_enemy) {
-
-            const gen = this.enemyGen[this.generatorRunning].next() // Enemy Generator
-            if (!gen.done) {
-                enemies.push(gen.value as Ship)
-            }
-            this.generatorRunning = this.generatorRunning + 1 < this.enemyGen.length ? this.generatorRunning + 1 : 0
-
-        }
-        return enemies
+        !isEnemy && setTimeout(() => this.nextShotIn = 0, game_settings['shot_timeout']);
+        !isEnemy && (this.nextShotIn = game_settings['shot_timeout'])
+        return [new Bullet('#ff0000', dir ?? 'up', game_settings['BULLET_SPEED'], fatherx - size / 2, fathery, size, game_settings['BULLET_DMG'])]
     }
 
     /**
@@ -453,16 +466,21 @@ class GameBoard extends React.Component<GameProps, GameState>{
         const xoffset = posXNewShip
         for (let i = 0, j = 0; i < limit; i++, j++) {
             if (j === enemiesPerRow) {
-                posYNewRow += size + this.VERTICAL_OFFSET
+                posYNewRow += size + game_settings['VERTICAL_OFFSET']
                 posXNewShip = xoffset as number
                 j = 0
             }
             posXNewShip += 5 + spacing// left Margin
-            let enemy: Ship = new Ship('#ffffff', posXNewShip, posYNewRow, size, 'enemy', this.ENEMY_HP, this.ENEMY_SPEED, 500, dir,)
+            let enemy: Ship = new Ship('#ffffff', posXNewShip, posYNewRow, size, 'enemy', game_settings['ENEMY_HP'], game_settings['ENEMY_SPEED'], 500, dir,)
             posXNewShip += size + 5 + spacing// right Margin
             yield enemy
         }
     }
+
+    /**
+     * Store the new achieved score in the local storage of the browser
+     * to keep record of the high score
+     */
     recordScore() {
         const hs = localStorage.getItem('highScore');
         if (!hs) {
@@ -473,6 +491,7 @@ class GameBoard extends React.Component<GameProps, GameState>{
             localStorage.setItem('matchScore', this.state.score.toString());
         }
     }
+
     render() {
         if (this.state.hasLost) {
             this.recordScore();

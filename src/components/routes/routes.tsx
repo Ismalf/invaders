@@ -3,7 +3,7 @@ import {
     Switch,
     Redirect,
 } from "react-router-dom";
-import GameBoard from "../game_objects/game_board/game_board";
+import GameBoard from "../pages/game_board/game_board";
 import About from "../pages/about/about";
 import Menu from '../pages/menu/menu';
 import Score from '../pages/score/score';

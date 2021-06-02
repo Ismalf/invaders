@@ -1,7 +1,0 @@
-.bullet{
-    width: 10px;
-    height: 10px;
-    position: absolute;
-    border: 1px white;
-    box-shadow: 0 0 10px 0 orange, 0 10px 8px rgba(255, 165, 23, 0.781), 0 20px 6px rgba(255, 165, 23, 0.481);
-}

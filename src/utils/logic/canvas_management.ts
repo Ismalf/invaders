@@ -1,6 +1,6 @@
-import { Bullet } from "../../components/game_objects/bullet/bullet";
-import { Shield } from "../../components/game_objects/shield/shield";
-import { Ship } from "../../components/game_objects/ship/ship";
+import { Bullet } from "../../classes/game_objects/bullet/bullet";
+import { Shield } from "../../classes/game_objects/shield/shield";
+import { Ship } from "../../classes/game_objects/ship/ship";
 
 export class CM {
     /**

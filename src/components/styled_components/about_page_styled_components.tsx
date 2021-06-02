@@ -5,7 +5,7 @@ const AboutPage = styled.div`
     width: 100%;
     max-width: 310px;
     display: grid;
-    grid-template-rows: 100px 70px auto 100px;
+    grid-template-rows: 100px 30px auto 100px;
     grid-template-columns: 100%;
     align-items: center;
     justify-items: center;

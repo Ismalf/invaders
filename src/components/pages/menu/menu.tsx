@@ -24,7 +24,7 @@ class Menu extends React.Component<{}, MenuState> {
         return (
             <Transition>
                 <MenuScreen>
-                    <Title>REACT INVADERS</Title>
+                    <Title>INVADERS</Title>
                     <MenuItemList>
                         <MenuItem onClick={() => this.redirectTo('/game')}>
                             <MenuItemContent>

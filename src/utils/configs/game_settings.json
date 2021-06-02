@@ -1,4 +1,14 @@
 {
     "frame_rate": 60,
-    "shot_timeout": 500
+    "shot_timeout": 500,
+    "ENEMY_SHOT_INTERVAL": 500,
+    "ENEMY_SPEED_BOOST_INTERVAL": 6000,
+    "LIMIT_OF_ENEMY_SHIPS_ON_SCREEN": 100,
+    "BULLET_SPEED": 5,
+    "BULLET_DMG": 100,
+    "ENEMY_HP": 100,
+    "ENEMY_SPEED": 0.1,
+    "PLAYER_SPEED": 2,
+    "VERTICAL_OFFSET": 5,
+    "PLAYER_SIZE": 32
 }
